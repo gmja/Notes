@@ -1,0 +1,10 @@
+Continuous delivery and deployment pipeline
+Build -> Deploy -> Test -> Release
+
+Jobs for each stage that are chained
+
+1. Developers make changes and commit to version control
+2. Jenkins build job polls for changes (or runs on an interval) and creates output file
+3. deployment jobs run to deploy to test environment
+4. test jobs run against test environment
+5. deployment to production

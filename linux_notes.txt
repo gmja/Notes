@@ -1,0 +1,144 @@
+Command line basics:
+
+Setup login:
+ip addr show - like ipconfig in windows. show the network information
+ssh user@host [command]
+/etc/ssh_config - global config file
+~/.ssh/config - user specific config file
+ssh-keygen -t rsa - generate key pairs
+~/.ssh/id_rsa - private key
+~/.ssh/id_rsa.pub - public key
+ssh-copy-id user@host - install public key from ~/id_rsa.pub to /home/USER/authorized_keys on target host
+
+Getting Help:
+sudo mandb - build/refresh the manual database
+man <command> - pull up manual page
+	options in square brackets are optional
+whatis <command> - display manual page descriptions
+pinfo - top level of the info tree. More in depth version of man.
+	pinfo grub 
+/usr/share/doc - contains documentation for installed software
+
+Working in Command Line:
+home, ctrl+a - begining of line
+end, ctrl+e - end of line
+alt+b - move back 1 word
+alt+f - move forward 1 word
+ctrl+k - cursor to eol
+ctrl+w - delete word next to cursor
+ctrl+y - undo
+ctrl+t - swap letters around
+ctrl+l - clear screen
+alt+c - capitolize word
+history - see command history
+	!5 - rerun command 5
+	!e - rerun most recent command that starts with e
+grep - text searching tool
+	grep -ir guru /etc - case insensitive search for the word guru inside files /etc folder
+locate - search tool for file names
+find - search for files in a directory for hierarchy
+
+VIM: 
+vimtutor - tutorial for the vim editor
+move cursor:
+	h - left
+	j - down
+	k - up
+	l - right
+ESC - normal mode
+:q! - discard changes
+x - delete under the cursor
+i - insert text
+A - append text
+:wq - save a file and exit
+dw - delete a word, needs to be on the first character of the word
+d$ - delete to eol
+w - move forward to start of next word
+e - move to end of current word
+$ - move to end of line
+2w - move forward 2 words. can use any count before the motion
+dd - delete whole line
+u - undo the last command 
+U to fix a whole line
+ctrl+r - redo
+p - put the previously deleted text after the cursor
+rx - replace the character at the cursor with x
+ce - change to end of a word
+ctrl+g - show location in the file and status
+gg - move to start of file
+G - move to bottom of file
+<line number> G - move to specified line
+/ <phrase> - search for phrase
+	n - next
+	N - previous
+% - find matching )]}*
+:s/old/new/g - substitues 'new' for 'old' in a line
+:%s/old/new/g - changes every occurrence in the whole file
+:%s/old/new/gc - prompts whether to substitute or not
+o - open a line below the cursor and place you in insert mode
+a - insert text after the cursor
+v - visual mode to highlight text
+y - copy text
+p - paste text
+
+The File System:
+man hier - manual of file system hierarchy
+/ - root of the file system. everything is organized under root
+bin - binaries
+boot - bootloader, config, kernel
+dev - device nodes (hard drives, sound card)
+etc - system level config
+home - user home directories
+root - root's home directory
+run - dynamic runtime data
+sbin - system/superuser binaries
+tmp - world writeable scratch space
+usr - programs, libraries, docs
+var - persistent variable data
+absolute paths - denote full locations starting at root
+relative paths - denotes locations relative to your current directory
+	. - signify current folder
+	.. - parent folder
+pwd - display your current directory
+~ - current user's home directory 
+~user - specified user's home directory
+cp - copy file
+mv - move file (or rename)
+rm - remove
+touch - create empty file
+mkdir - create directory
+	-p create parent directories as needed
+file globbing
+	* 0 or more of any character
+	? 1 of any character
+	[...] - 1 of any character specified in the []
+	[^..] - 1 of any character not in the []
+softlink/symlink
+	ln -s
+		-v (verbose)
+hard links - can only link to files on same file system
+	ln <file> <link name>
+cat - concatenate files and redirect output to console
+
+Users and Groups:
+Users - every process runs as a user. every filesystem object belongs to a user, every regular user has a /home direcotry which contains their data and preferences (in hidden .files). 
+3 account types
+	root (admin) - uid 0
+	system - uids 1-200 & 201-999
+	regular - uids 1000+
+id <username> - information about user accounts
+users - see logged in users
+who - see logged in users with more detail
+w - all the details
+getent passwd <user> - query passwd database for user 
+useradd <user> - create new user
+passwd <user> - set user password. account is not active until a pw is set
+/etc/skel - skeleton directory for how new home directories are created
+usermod - command to modify users. usually used for changing groups
+	usermod -aG users,wheel nuguru - append groups users and wheel add nuguru user
+userdel - remove user
+/etc/passwd - account info
+	guru:x:1000:1000:A Cloud Guru:/home/guru:/bin/bash
+	<account name>:<shadow passwords in /etc/shadow>:<user id>:<primary group id>:<comment/full name>:<home directory>:<login shell>
+/etc/shadow - password hash file
+	<account name>:<password info - algorithm, salt, pw hash>:<password ageing>

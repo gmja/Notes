@@ -1,0 +1,35 @@
+Add folder to git:
+1. navigate to folder location
+2. initialize the git repository: git init 
+3. add files to git: git add <file> (git add .  to add everything)
+4. commit files: git commit -m "message"
+
+Adding to remote repository
+1. git remote add origin "https://github.com/<respository>"
+2. git push -u origin master
+
+Configure github credentials
+1. git config --global user.email ""
+2. git config --global user.name ""
+
+Branching and Merging:
+1. create branch: git branch "branch name"
+2. switch(checkout) to new branch: git checkout "branch name"
+3. make changes, add files, commit ect.
+4. push new branch to github: git push -u origin MyNewBranch
+5. merge new branch in master branch:
+	first chekcout master, the: git merge "branch name"
+6. push master branch to github: git push -u origin master
+7. delete branch
+	git branch -d "branch name" (from local)
+	git push origin --delete "branch name" (from remote)
+	
+Revert changes:
+git revert <name of bad commit>
+
+Get a list of files that has changed in a particular commit:
+git diff-tree -r {hash}
+
+squashing - combining multiple commits into a single commit
+1. "git reset -soft HEAD~N &&" where N is the number of commits
+2. git commit
