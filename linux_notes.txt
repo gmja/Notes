@@ -142,3 +142,91 @@ userdel - remove user
 	<account name>:<shadow passwords in /etc/shadow>:<user id>:<primary group id>:<comment/full name>:<home directory>:<login shell>
 /etc/shadow - password hash file
 	<account name>:<password info - algorithm, salt, pw hash>:<password ageing>
+Groups - every process runs as a member of a group, every filesystem object belongs to a group, every gorup name maps to a unique gid. users get their own private group by default. groups manage shared access to files.
+groups <user> - what groups you belong to 
+groupadd <group name>
+usermod -aG <group name> <user> - add to groups
+groupdel <group name>
+groupmod - change group id, change name, rarely used command
+getent <group> - view groupDB entry
+/etc/group - group info
+	wheel:x:10:guru,wibble,hatguru
+	<group name>:<shadow passwords>:<groupid>:<group members comma separated>
+/etc/gshadow
+	wheel:::guru,wibble,hatguru
+	<group name>:<password hash, probably empty since group pwds aren't used>:<group admins>:<group members>
+	
+Privilege Escalation
+root - local admin, go anywhere and do anything, root can destroy everything. Never use root as day to day login account. Use regular account and escalate as needed.
+su - switch user 
+su <user> -c CMD - to run cmd as user
+tail -f /var/log/secure & - tail looks at the last 10 lines of a file. -f to follow file <file name> and & runs in the background. This is monitoring security logs. 
+jobs - command to see running jobs
+kill %<id> - end task
+journalctl -t - similar to tail command. looks at security logs
+visudo - edit the /etc/sudoers file
+sudo CMD - run CMD as root. must be allowed in /etc/sudoers
+
+Controlling user access
+chage OPTIONS <user> - command to control password aging
+/etc/shadow - contains the aging options
+usermod -L <user> - lock users account
+usermod -U <user> - unlock account
+usermod -s /sbin/nologin <user> - set shell to no login, but can still use nonlogin services (mail, ftp)
+
+Network authentication
+authenticating over the network is complex, difficult to setup and easy to break.
+authconfig - difficult command line
+authconfig-tui - menu driven
+authconfig-gtk - easiest gui
+
+Managing File Access
+File attributes
+	every file belongs to at least 1 user and 1 group
+	ls -l to view permissions
+ -rwxrw-r-- 1 guru gurus 30076 May 15 15:32 afile
+	<file type> - - regular file, d directory, l link, p named pipe, s socket, c character device b block device
+file permissions - chmod <mode> <file>
+	rwxrwxrwx
+	(u)ser (g)roup (o)ther(everyone else)
+	+ add, -remove, = set
+	who how what
+	ex: chmod a-x afile: remove the execute permissions from all 
+	ex: chmod u=rwx,go-wx afile: user gets read write execute, remove write execute from groups and other
+	ex: chmod -R a+X adirectory: recursively set execute on directories
+	extra attributes
+	link count
+	owning user - chown <user> <file>
+	owning group - chgrp <group> <file>
+	file size
+	last modification time
+	file name
+numerical permissions
+	rwxr-xr-x
+	111101101 - binary representation
+	7, 5, 5 - 
+	chmod 755 adirectory
+	rw-r--r--
+	110100100
+	6, 4, 4
+	chmod 644 afile
+special permissions
+	rwxrwxrw[t] - sticky bit, typically only set on a directory. items in directory may only be deleted by owner. tmp folder
+	rwxrw[s]rwx - new objects in this directory inherit its group ownership
+	rw[s]rwxrwx - suid set user identity. program runs as owner rather than caller
+	setting special permissions
+		chmod u+s, g+s, o+t adirectory
+		rwxr-Sr-T - if the special bit is lowercase, there is also execute permissions. If its uppercase, there is no execute permission.
+		numerically: chmod 3755 adir
+default permissions 0666 files, 0777 folders
+	umask - command to view or set users umask
+	effective user defaults determined by subtracting the umask from defaults
+POSIX ACLs
+	Standard permissions are too basic
+	getfacl <file> - command to see the access control list
+	setfacl -m u:nuguru:rx afile - set the access control list, add user nuguru with read write
+	POSIX ACL masks - limit maximum privileges for group owner, named users, named groups. mask calculated as union of above permissions
+		setfacl -m m::rx afile - set the mask to read execute 
+Default ACLs
+	Only set on directories. New objects created in directory inherit default ACLs
+		setfacl -Rm d:u:nuguru:rx - set acl of default type that gives user nuguru read execute. Recursive options to apply to all subfolders/files
