@@ -230,3 +230,128 @@ POSIX ACLs
 Default ACLs
 	Only set on directories. New objects created in directory inherit default ACLs
 		setfacl -Rm d:u:nuguru:rx - set acl of default type that gives user nuguru read execute. Recursive options to apply to all subfolders/files
+		
+Security Enhanced Linux (SELinux)
+Additional layer created by NSA to enhance linux security.
+	MAC - mandatory access control. Admin defined, enforced system wide. more granular, context/role-based control	
+		RBAC - role based access control
+		MLS - multi-level security
+		TE - type enforcement
+States - disabled, permissive (log violations, allow access), enforcing (deny access)
+Policy - minimal, targeted, MLS
+getenforce - query if in permissive or enforcing mode 
+sestatus - check status
+/etc/selinux/config - config file for selinux
+subject - user/process/device
+object - files, ports
+
+contexts - all subjects and objects have contexts. 
+	user:role:type:range
+	policy dictates which users can assume what roles, what user:role combinations are valid with which types. how subjects and objects may interact base don context. 
+	ls -Z /etc/shadow - get file listing with selinux context
+		system_u:object_r:shadow_t:s0
+	/var/log/audit/audit.log - logging for selinux
+	chcon - change context of a file
+	restorecon - put context back
+	ps -Z - display context for process
+	most issues are due to incorrect types set on file contexts
+
+changing with booleans - some aspects of policy can be controlled via booleans. defined within policy and allow fine-tuning
+	getsebool -a - list all availalbe booleans and their state
+	semanage boolean -l | sort | less - better command to view available booleans
+	setsebool httpd_enable_homedirs=1
+		-P option to change the policy in addition to the runstate
+	semanage boolean -m -1 http_enable_homedirs - commands to enable particular boolean
+	
+Making policy changes
+	Policy updates and config changes can trigger FS relabel. Changes to FS objects not in policy will be lost
+	semanage fcontext -l | grep <context> - search for the context
+	
+Troubleshooting - 
+	is it doing it's job correctly? 
+	Is there a boolean associated with current issue?
+	Are there any file contexts that need updating?
+	Is a policy amendment required?
+	Tools:
+		/var/log/audit/audit.log
+		setroubleshoot
+			yum install setroubleshoot-server policycoreutils-gui
+			
+Managing Processes - Fundamentals
+Processes can be started by other processes (e.g. systemd), the linux kernel, user commands. All processes have a parent (except systemd). Some processes spawn child processes. If the parent dies/exits, so do the children. Processes are assigned a unique incremental PID. 
+Processes started from CLI run in foreground, but can be run in the backgroudn with &
+ctrl+z - suspend process
+bg %<job nubmer> - set to run in background (fg for foreground)
+jobs - view all suspended and background processes
+
+Process Monitoring
+pstree | less - see the process tree
+pstree -p --security-content | less
+ps - processes currently attached to your terminal
+ps aux | less - all process on system
+top - like task manager
+	set: z, x, B, shift+w to write config file
+uptime - system uptime
+sar - system activity report
+sar 1 10 - check every second for 10 seconds
+load average: 1 min, 5 min, 15 min
+process states: 
+	r - running/runnable
+	s - sleeping (interrutable)
+	d - sleeping (uninterrutable - waiting for HW)
+	T - suspended
+	Z - zombie (defunct)
+	others rarely seen
+
+Controlling Processes
+process communicate using signals (kill -l for list)
+kill <pid> - terminate by process id
+kill %<job id> - terminate by job
+kill -KILL, SIGKILL, or -9 - specify the kill signal
+killall -19 myproc.sh - stop all myproc.sh processes
+pgrep - search processes by name, returns pid
+pgrep -u <username> 
+pkill - same as pgrep but kills instead of returning pid
+nohup - command to keep children processes running after parent exits
+
+Task Scheduler and priorities.
+0 (high) -> 139 (low) priority. 
+SCHED_OTHER - default scheduling policy. Priorities 100 -> 139
+SCHED_BATCH - scheduling policy used for batch processing
+processes assigned priority 120 by default ("nice" value 0)
+top r - change the nice value of a pid
+nice -n <nicevalue> - start a process with a set nice value
+renice -n <nicevalue> -p <pid> - change priority by pid
+renice -n <nice value> -g <group> or -u <user> - change by user or group
+
+I/O redirection and piping
+STDOUT - channel 1 where processes send their standard output. default is terminal. redirect with >. >> - append instead of overwrite.
+STDERR - channel 2 where processes send their errors. default terminal, redirect with 2> 
+e.x. find /etc/ -name 'cups' &> results.out - send both channels to results.out
+STDIN - channel 0. where processes are expecting input. redirect with < 
+ cat < /etc/passwd - redirect contents of /etc/passwd to cat instead of expecting keyboard input
+Piping - take multiple commands and join them together. Redirecting STDOUT from command1 to STDIN of command 2
+	mail - send by email
+	sort - inline sort of data 
+	grep - search using regex
+	cut - extract specific columns or characters
+	wc - count lines words and/or characters
+	tr - perform character deletion/substitution
+	uniq - remove/count adjacent duplicate lines
+	
+Software management
+Package management fundamentals 
+	software installation puts files all over the place.
+	config files evolve over time and must be handled properly
+	package information should be searchable
+	package contents/creators must be 'verified'
+	some package installations require additional actions
+	dependencies should be checked
+rpm - redhat package manager
+	package contains files, locations metadata permissions timestamps size checksums, pre/post install scripts, pre/post remove, signed checksums, dependencies
+yum - yellowdog updater, modified. Wrapper for RPM
+	automatic dependency resolutions
+	automatic package retrieval
+	subscriptions/repositories
+	automatic updates
+	package groups
