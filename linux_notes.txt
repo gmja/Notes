@@ -355,3 +355,131 @@ yum - yellowdog updater, modified. Wrapper for RPM
 	subscriptions/repositories
 	automatic updates
 	package groups
+Yum commands
+	search <string>
+	info <package>
+	-y arguement to answer yes to all prompts
+	update <package> - no package name will update all installed packages
+	groups
+		install
+		remove
+		list
+		info
+	history
+		yum history list 28 - get detail on action 28
+		yum history undo 28 - undo action 28
+		yum history rollback 27 - undo all actions to transaction 27
+	tail -f /var/log/yum.log - view yum log file
+Repositories - default repos only contain 'base' packages and updates. Additional repos host vast array of extras (fedora EPEL, RPM Fusion)
+	yum-config-manager --add-repo="url"
+	edit /etc/yum.repos.d/*.repo
+	yum install repoconfig.rpm
+	
+File Systems and Storage
+local storage naming conventions
+	storage devices appear as files in /dev
+	brw-rw----. 1 root disk 8, 1 Sept 4 10:50 sdb1
+		brw-rw---- block type, rw owner and group
+		sdb1 - SCSI/SATA Disk, Disk B, partitial 1
+		8, 1 - major minor verision
+	/dev/sda - entire disk ACL
+	/dev/sdb2 - disk b partition 2
+	/dev/vda3 - virtual disk 1 partition 3
+partitioning strategies
+	MBR Old BIOS - max 15 partitions, 1 partition table, max 2 TiB devive partition size
+	GPT - primary and backup partition table, partitions from 1 - 128, fault tolerant
+Adding storage and swap
+	identify -> partition -> format -> mount -> make persistent
+	Identitfy
+		lsblk - list storage block devices
+		blkid - list Universal identifiers for file systems
+	Partition
+		gdisk - command wizard to create GPT partitions and swap
+		fdisk - command wizard to create MBR partitions
+		partprobe after saving partition structure
+	Format
+		mkfs - make file system
+		mkswap - make swap 
+	Mount
+		mkdir /more - make a directory as a mount point
+		mount /dev/sdb1 /more - mount storage to /more
+		swapon /dev/sdb2 - active swap space (no mount point)
+	Make persistent
+		/etc/fstab -  contains partition info and mount points. Need to update this file in order for the changes to persist after reboot. 
+Network file sharing
+NFS - Network file system, traditionally linux/unix, originally UDP but NFSv4+ can do TCP, Kerberos based security
+CIFS - common internet file system. Traditionally MS/Mac. TCP and UDP. Various authentication types supported. 
+Yum install nfs-utilis
+Adding NFS Network storage
+	Identify -> Mount -> Make Persistent
+	Identify	
+		showmount -e <ip> or <hostname> of fileserver
+		mount <server>:/ /mnt - mount root of the fileserver
+		yum install autofs
+			systemctl start autofs
+			cd /net/<server>
+	Mount
+		mkdir /nfsmount
+		mount -t nfs <server>:/home/store /nfsmount/
+	Make persistent in /etc/fstab
+		serv:/home/store /nfsmount nfs <noauto/defaults,db> 0 0
+			noauto - doesn't automatically mount
+			defaults,db - automatically mount, run in background in case storage is done
+	fuser -vm /nfsmount/ - see what processes are utilizing the mount point
+Adding CIFS/SMB
+	Identify
+		smbclient -L <server> -N (no auto)
+		smbclient -L <server> -U sambaguru -W gurus
+			sambaguru user, gurus domain
+		smbclient //<server>/sambaguru -U sambaguru -W gurus
+	Mount	
+		mkdir /cifsmount
+		mount -o username=sambaguru,domain=gurus //<server>/sambaguru /cifsmount
+			will prompt for password
+	make persistent in /etc/fstab
+		//<server>/sambaguru /cifsmount cifs credentials=/root/my.creds 0 0 
+			give it a credentials file that only root can read
+		vim ~/my.creds
+		chmod 600 my.creds
+Automounter
+persistent mounts in /etc/fstab can cause issues.
+	unavaialble network mounts can stall boot
+	global mount options don't work for all users
+	normal users cannot mount/unmount
+automounter watches given mountpoints, mounts/unmounts as needed. Can do so with user-specific mount options
+Logical Volume Manager
+Takes physical devices and combine into a logical volume group, then partition storage called logical volumes
+Flexbility to add/remove drives, scalability, 
+Cons - fault tolerance. 1 device loss can impact multiple LVs
+	partition -> initialise -> pool -> allocate -> format -> mount -> make persistent
+	Partition
+		gdisk/fdisk
+		select linux physical LVM type
+	Initialize
+		pvcreate /dev/sdb3 /dev/sdb4
+	Pool
+		vgcreate MyVG /dev/sdb3 /dev/sdb4
+	Allocate
+		lvcreate -n docs -l 20%VG MyVG - create logical volumn docs with 20% storage of MyVG
+		lvcreate -n data -L 80M MyVG
+	format	
+		mkfs.xfs /dev/MyVG/docs
+		mkfs.xfs /dev/MyVG/data
+	mount
+		mkdir -p /store/data /store/docs
+	make persistent in /etc/fstab
+		/dev/MyVG/data /store/data xfs defaults 0 2
+		test:
+			umount /store/data
+			mount -a
+Extend a volume
+add physical volume -> initialize -> extend VG -> extend logical volumes
+	extend	VG
+		vgextend MyVG /dev/sdb5
+	extend logical	
+		lvextend -L +64M /dev/MyVG/data
+	grow file system
+		xfs_growfs /dev/MyVG/data
+Remove physical volume
+	pvmove /dev/sdb3 - remove files from device
+	vgreduce /dev/sdb3
