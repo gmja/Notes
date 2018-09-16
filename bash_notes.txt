@@ -1,0 +1,29 @@
+Pitfalls:
+* Need spaces between commands/operators
+* don't forget the if, then, fi
+
+#!/bin/bash - start of script
+read var1 - read from stdin
+echo $var1 - output contents of var1
+
+For loop syntax: 
+for num in {1..50}
+do
+  echo $num
+done
+
+Math:
+read x
+read y
+echo $(($x+$y))
+
+If statement synxtax:
+if [ $x -gt $y ]
+then
+    echo X is greater than Y
+elif [ $x -eq $y ]
+then    
+    echo X is equal to Y
+else
+    echo X is less than Y
+fi

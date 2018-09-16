@@ -483,3 +483,101 @@ add physical volume -> initialize -> extend VG -> extend logical volumes
 Remove physical volume
 	pvmove /dev/sdb3 - remove files from device
 	vgreduce /dev/sdb3
+	
+Service and Boot Management
+systemd - a suite of service/boot maanagement tools. 1st binary when called on boot so always PID 1. It intelligently maanges services and performs startup tasts
+	parallel service initialisation reduces boot timestamps
+	can start/stop services in response to certain events
+	handles service dependencies to prevent timeout
+	controls systemstates using units
+		*.service used to manage system services
+		*.target unites used to put system into a specific state
+		*.socket network events
+		*.path fs events
+systemctl - command to interact with system md and services
+	systemctl status <service> 
+	systemctl stop/start <service>
+	systemctl list-units
+	systemctl -t service - command to see all services
+	systemctl enable <service> - make sure a service is enabled (persists past reboot)
+	systemctl mask <service> - prevents a service from being enabled/disabled. Need to unmask to modify
+	systemctl is-active/is-enabled <service> - check specific service
+	systemctl get-default/set-default - check default boot state
+boot process
+	BIOS -> Boot loader (grub2) -> kernel + initramfs -> systemd from initramfs -> inird.target - mounts actual rootfs to /sysroot -> systemd from / -> default.target -> sysinit.target, File system checks, remounts as rewrite
+	BIOS - firmware
+	Boot loader - configured in /boot/grub2/grub.cfg from /etc/grub.d and /etc/default/grub via grub2-mkconfig
+	Kernel - edit values in /sys/* /proc/sys/* 
+	sysinit.target - /etc/fstab
+boot parameters - passed to boot loader -> kernel -> systemd
+	rd.break - stops the system while its running on initramfs. 
+	systemd.unit=rescue.target - systemd runs rescue.target -> sysinit.target
+	systemd.unit=emergency.target - systemd runs emergency.target but not sysinit so file system checks don't run
+root password recovery
+	Reboot. at boot loader hit 'e' for edit. 
+	add rd.break parameter to the boot loader file
+	set file system as rw 
+		mount -o remount,rw /sysroot/
+		mount
+	change kernel to use disk file system instead of initramfs
+		chroot /sysroot/
+	update root passwd
+		passwd guru
+	Root passwd is changed but changes made in recovery mode do not apply for SE linux.
+		touch /.autorelabel
+
+Networking
+Discovery and diagnostics
+	ip - swiss army knife netwojprking command
+	ip addr show - s hows ip addresses for the system
+	hostname/hostnamectl - view or change hostname of the system
+	NIC naming conventions	
+		enp0s3
+		en - type ethernet
+		p0 - port 0
+		s3 - slot 3
+	ip route show - check default gateway
+	dig acloud.guru - dns query for acloud.guru. replacing nslookup
+	tracepath acloud.guru - view routing information for nodes to acloud.guru server. replacement for traceroute
+	ss - command to view what processes/services are listening on what ports. replacement for netstat
+configuration
+	networkmanager - network control and configuration service. 
+		keeps devices/connections up when possible
+		con respond to hardware/network events
+		works synergistically with old configuration mechanism
+			/etc/sysconfig/network-scripts/ifcfg-*
+	nmcli - command to interact with network manager
+		nmcli device - view devices
+hostnames and DNS
+	/etc/hostname - where hostname is configured 
+	hostnamectl - show hostname information and set hostname permanently
+	DNS
+	/etc/nsswitch.conf - hosts: files dns myhostname
+		file - tells system to look at /etc/hosts  for name resolution
+		dns - checks dns next. configured in /etc/resolv.conf
+	Name resolution tools	
+		Dig - queries DNS and returns verbatim results
+			@server - to query specific dns server
+			mx - query mail servers
+		host - queries DNS and provides clean results
+		getent - checks hosts file as well as dns
+firewalling 
+	netfilter - the kernel firewall/NAT/packet mangler 
+	many hardware firewalls use embedded linux + netfilter
+	firewalld - simplifies firewall management. Classifies traffic into zones and handles accordinly. Ties into networkmanager. 
+	Zones - rules are stateful. incoming traffic related to outbound connections allowed. 
+		trusted - allows all incoming traffic
+		public - reject incoming except ssh/dhcpv6. default zone for new interfaces
+		block - reject all
+		drop - drop all
+	firewall-cmd - commands to manage running firewalld
+		--permanent - make request change persistent
+		--get-zones for a full list of zones
+		--get/set-default-zone view/set default zone
+		--zone to specify zone to operate on
+		--list-all view config for specified/default zone
+		--add/remove	
+			-source 
+			-interface
+			-service
+			-port
